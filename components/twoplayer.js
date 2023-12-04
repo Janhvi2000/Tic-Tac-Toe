@@ -6,7 +6,8 @@ import * as SQLite from 'expo-sqlite';
 const db = SQLite.openDatabase('user.db');
 
 const newGameState = {
-  squares: Array(9).fill(null),
+  history: [Array(9).fill(null)], // Store the move history
+  stepNumber: 0, // Index of the current move
   xIsNext: true,
 };
 
@@ -25,17 +26,22 @@ class App extends Component {
   }
 
   onMove(i) {
-    let newSquares = this.state.squares.slice();
+    const history = this.state.history.slice(0, this.state.stepNumber + 1);
+    const currentSquares = history[history.length - 1];
+    const newSquares = currentSquares.slice();
+
     const turn = this.whoseTurn();
-    if (this.state.squares[i] || winner(this.state.squares)) return null;
+    if (newSquares[i] || winner(newSquares)) return null;
+
     newSquares[i] = turn;
     this.setState(
       {
-        squares: newSquares,
+        history: history.concat([newSquares]),
+        stepNumber: history.length,
         xIsNext: !this.state.xIsNext,
       },
       () => {
-        const currentWinner = winner(this.state.squares);
+        const currentWinner = winner(newSquares);
         if (currentWinner !== undefined) {
           const user1 = this.props.route.params.user1;
           const user2 = this.props.route.params.user2;
@@ -102,32 +108,47 @@ class App extends Component {
       }
     });
   }
-  
-  
+
+  onUndo() {
+    if (this.state.stepNumber > 0) {
+      this.setState({
+        stepNumber: this.state.stepNumber - 1,
+        xIsNext: !this.state.xIsNext,
+      });
+    }
+  }
 
   render() {
     const user1 = this.props.route.params.user1;
     const user2 = this.props.route.params.user2;
+    const history = this.state.history;
+    const currentSquares = history[this.state.stepNumber];
+
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.boardContainer}>
-          <Board squares={this.state.squares} onMove={(i) => this.onMove(i)} />
+          <Board squares={currentSquares} onMove={(i) => this.onMove(i)} />
         </View>
         <View style={styles.buttonContainer}>
-        <Status
-          turn={this.whoseTurn()}
-          winner={winner(this.state.squares)}
-          user1={user1}
-          user2={user2}
-        />
+          <Status
+            turn={this.whoseTurn()}
+            winner={winner(currentSquares)}
+            user1={user1}
+            user2={user2}
+          />
           <Button title="Start new game" onPress={() => this.onNewGame()} />
+          <Button
+            title="Undo"
+            onPress={() => this.onUndo()}
+            disabled={this.state.stepNumber === 0}
+          />
           <Button
             title="Home"
             onPress={() =>
               this.props.navigation.navigate('FirstScreen', {
                 user1: user1,
                 user2: user2,
-                updateStats: this.updateStats, // Pass the updateStats function as a callback
+                updateStats: this.updateStats, 
               })
             }
           />
@@ -135,7 +156,7 @@ class App extends Component {
       </SafeAreaView>
     );
   }
-}
+};
 
 const Board = ({ squares, onMove }) => {
   return (
