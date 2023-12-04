@@ -52,9 +52,7 @@ class App extends Component {
   }
 
   updateWinner(winner, user1, user2) {
-    console.log(user1)
-    console.log(user2)
-    console.log(winner)
+    console.log("winner:",winner)
     db.transaction((tx) => {
       if (winner === null) {
         // It's a draw, update draws for both users
@@ -73,8 +71,8 @@ class App extends Component {
           }
         );
       } else {
-        const winnerUsername = winner === user1 ? user2 : user1;
-        const loserUsername = winner === user1 ? user1 : user2;
+        const winnerUsername = winner === 'X'? user1 : user2;
+        const loserUsername = winner === 'X' ? user2 : user1;
   
         tx.executeSql(
           'UPDATE users SET games = games + 1, wins = wins + 1 WHERE username = ?',
@@ -118,6 +116,20 @@ class App extends Component {
     }
   }
 
+  onResign() {
+    const { user1, user2 } = this.props.route.params;
+    const loserUsername = this.whoseTurn();
+    console.log("loser: ",loserUsername);
+    const winnerUsername = loserUsername === 'X' ? 'O' : 'X';
+    console.log("winner:",winnerUsername)
+    this.updateWinner(winnerUsername, user1, user2);
+    this.props.navigation.navigate('FirstScreen', {
+      user1: user1,
+      user2: user2,
+      updateStats: this.updateStats,
+    });
+  }
+
   render() {
     const user1 = this.props.route.params.user1;
     const user2 = this.props.route.params.user2;
@@ -142,6 +154,7 @@ class App extends Component {
             onPress={() => this.onUndo()}
             disabled={this.state.stepNumber === 0}
           />
+          <Button title="Resign" onPress={() => this.onResign()} />
           <Button
             title="Home"
             onPress={() =>
@@ -156,7 +169,7 @@ class App extends Component {
       </SafeAreaView>
     );
   }
-};
+}
 
 const Board = ({ squares, onMove }) => {
   return (
