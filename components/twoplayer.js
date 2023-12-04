@@ -2,12 +2,13 @@ import React, { Component } from 'react';
 import { Button, SafeAreaView, Text, TouchableHighlight, View, StyleSheet } from 'react-native';
 import { withNavigation } from '@react-navigation/native';
 import * as SQLite from 'expo-sqlite';
+import { Audio } from 'expo-av'; 
 
 const db = SQLite.openDatabase('user.db');
 
 const newGameState = {
-  history: [Array(9).fill(null)], // Store the move history
-  stepNumber: 0, // Index of the current move
+  history: [Array(9).fill(null)], 
+  stepNumber: 0, 
   xIsNext: true,
 };
 
@@ -25,6 +26,36 @@ class App extends Component {
     this.setState(newGameState);
   }
 
+  soundObjectWin = new Audio.Sound();
+  soundObjectLose = new Audio.Sound();
+
+  async componentDidMount() {
+    await this.soundObjectWin.loadAsync(require('../assets/win.mp3'));
+    await this.soundObjectLose.loadAsync(require('../assets/loss.mp3'));
+  }
+
+  async playWinSound() {
+    try {
+      console.log('Playing win sound...');
+      await this.soundObjectWin.playAsync();
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Add a delay of 1 second
+      console.log('Win sound played successfully!');
+    } catch (error) {
+      console.error('Error playing win sound:', error);
+    }
+  }
+  
+  async playLoseSound() {
+    try {
+      console.log('Playing lose sound...');
+      await this.soundObjectLose.playAsync();
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Add a delay of 1 second
+      console.log('Lose sound played successfully!');
+    } catch (error) {
+      console.error('Error playing lose sound:', error);
+    }
+  }
+  
   onMove(i) {
     const history = this.state.history.slice(0, this.state.stepNumber + 1);
     const currentSquares = history[history.length - 1];
@@ -52,10 +83,9 @@ class App extends Component {
   }
 
   updateWinner(winner, user1, user2) {
-    console.log("winner:",winner)
+    console.log("winner:", winner)
     db.transaction((tx) => {
       if (winner === null) {
-        // It's a draw, update draws for both users
         tx.executeSql(
           'UPDATE users SET games = games + 1, draws = draws + 1 WHERE username = ? OR username = ?',
           [user1, user2],
@@ -70,8 +100,11 @@ class App extends Component {
             console.error('Error updating draw in the database:', error);
           }
         );
+        
+        this.playLoseSound(); 
+        
       } else {
-        const winnerUsername = winner === 'X'? user1 : user2;
+        const winnerUsername = winner === 'X' ? user1 : user2;
         const loserUsername = winner === 'X' ? user2 : user1;
   
         tx.executeSql(
@@ -103,9 +136,12 @@ class App extends Component {
             console.error('Error updating loser in the database:', loserError);
           }
         );
+  
+        this.playWinSound(); 
       }
     });
   }
+  
 
   onUndo() {
     if (this.state.stepNumber > 0) {
@@ -135,7 +171,6 @@ class App extends Component {
     const user2 = this.props.route.params.user2;
     const history = this.state.history;
     const currentSquares = history[this.state.stepNumber];
-
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.boardContainer}>
