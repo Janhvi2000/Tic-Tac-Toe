@@ -16,7 +16,7 @@ const Home = ({ navigation, route }) => {
     console.log('Page opened or route params changed');
     updateStats();
     route.params?.updateStats?.();
-  }, [user1, user2, route.params]);
+  }, [updateStats, user1, user2, route.params]);
 
   const updateStats = () => {
     getUserStats(user1, setUser1Stats);
@@ -65,6 +65,10 @@ const Home = ({ navigation, route }) => {
     navigation.navigate('Leaderboard');
   };
 
+  const navigateToAboutPage = () => {
+    navigation.navigate('About');
+  };
+
   return (
     <ScrollView contentContainerStyle={customStyles.container}>
       <Text style={customStyles.header}>Users Stats</Text>
@@ -103,6 +107,7 @@ const Home = ({ navigation, route }) => {
         <Button title="Game" onPress={navigateToComputerPage} />
         <Button title="Settings" onPress={navigateToSettingsPage} />
         <Button title="Leaderboard" onPress={navigateToLeaderboardPage} />
+        <Button title="About" onPress={navigateToAboutPage} />
       </View>
     </ScrollView>
   );

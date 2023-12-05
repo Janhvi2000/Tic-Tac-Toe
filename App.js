@@ -6,7 +6,7 @@ import Computer from './components/twoplayer';
 import User from './components/user';
 import Leaderboard from './components/leaderboard';
 import Settings from './components/settings';
-
+import About from './components/about';
 
 const Stack = createNativeStackNavigator();
 
@@ -45,7 +45,11 @@ function App() {
           component={Settings}
           options={{ title: 'TicTacToe' }}
         />
-       
+        <Stack.Screen
+          name="About"
+          component={About}
+          options={{ title: 'TicTacToe' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
