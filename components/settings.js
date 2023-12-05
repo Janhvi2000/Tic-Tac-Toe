@@ -8,16 +8,22 @@ const App = ({ navigation, route }) => {
     const { user1, user2 } = route.params;
     const [userColor1, setUserColor1] = useState('');
     const [userColor2, setUserColor2] = useState('');
+    const [muteSound, setMuteSound] = useState(false); 
 
     const handleUserManagement = () => {
-        updateUserColor(user1, userColor1);
-        updateUserColor(user2, userColor2);
+        if (userColor1 !== '') {
+            updateUserColor(user1, userColor1);
+            updateUserColor(user2, userColor2);
+        }
+    
+        updateSoundSetting(user1, muteSound);
+        updateSoundSetting(user2, muteSound);
         navigateToFirstScreen();
     };
 
     const updateUserColor = (username, usercolor) => {
         const lowercaseUserColor = usercolor.toLowerCase();
-    
+
         db.transaction((tx) => {
             tx.executeSql(
                 'UPDATE users SET usercolor = ? WHERE username = ?',
@@ -26,6 +32,19 @@ const App = ({ navigation, route }) => {
                     console.log(`User color updated for ${username}: ${lowercaseUserColor}`);
                 },
                 (_, error) => console.log(`Error updating user color for ${username}:`, error)
+            );
+        });
+    };
+
+    const updateSoundSetting = (username, soundValue) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                'UPDATE users SET sound = ? WHERE username = ?',
+                [soundValue ? 0 : 1, username], 
+                () => {
+                    console.log(`Sound setting updated for ${username}: ${soundValue ? 'Muted' : 'Unmuted'}`);
+                },
+                (_, error) => console.log(`Error updating sound setting for ${username}:`, error)
             );
         });
     };
@@ -51,7 +70,14 @@ const App = ({ navigation, route }) => {
                 onChangeText={(text) => setUserColor2(text)}
                 value={userColor2} 
             />
-            <Button title="Update User Colors" onPress={handleUserManagement} />
+            <Button title="Save" onPress={handleUserManagement} />
+
+            <View style={{ marginTop: 20 }}>
+                <Button
+                    title={muteSound ? 'Unmute Sound' : 'Mute Sound'}
+                    onPress={() => setMuteSound((prev) => !prev)}
+                />
+            </View>
         </View>
     );
 };

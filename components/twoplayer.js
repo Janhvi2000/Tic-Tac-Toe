@@ -14,15 +14,14 @@ const newGameState = {
 };
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = newGameState;
-    this.initializeGame();
-  }
-
-  whoseTurn() {
-    return this.state.xIsNext ? 'X' : 'O';
-  }
+  state = {
+    ...newGameState,
+    user1: null,
+    user2: null,
+    usercolorx: null,
+    usercoloro: null,
+    isSoundMuted: false,
+  };
 
   soundObjectWin = new Audio.Sound();
   soundObjectLose = new Audio.Sound();
@@ -37,6 +36,8 @@ class App extends Component {
     this.initializeGame();
     await this.soundObjectWin.loadAsync(require('../assets/win.mp3'));
     await this.soundObjectLose.loadAsync(require('../assets/loss.mp3'));
+    const { user1 } = this.props.route.params;
+    await this.fetchSoundSetting(user1);
   }
 
   async fetchUserColor(username, stateKey) {
@@ -56,25 +57,47 @@ class App extends Component {
     });
   }
 
-  async playWinSound() {
-    try {
-      console.log('Playing win sound...');
-      await this.soundObjectWin.playAsync();
-      console.log('Win sound played successfully!');
-    } catch (error) {
-      console.error('Error playing win sound:', error);
-    }
+  async fetchSoundSetting(username) {
+    await new Promise((resolve) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          'SELECT sound FROM users WHERE username = ?',
+          [username],
+          (_, { rows: { _array } }) => {
+            if (_array.length > 0) {
+              const soundValue = _array[0].sound;
+              this.setState({ isSoundMuted: soundValue === 0 });
+            }
+            resolve();
+          }
+        );
+      });
+    });
   }
 
-  async playLoseSound() {
-    try {
-      console.log('Playing lose sound...');
-      await this.soundObjectLose.playAsync();
-      console.log('Lose sound played successfully!');
-    } catch (error) {
-      console.error('Error playing lose sound:', error);
+  async playWinSound() {
+    if (!this.state.isSoundMuted) {
+        try {
+            console.log('Playing win sound...');
+            await this.soundObjectWin.playAsync();
+            console.log('Win sound played successfully!');
+        } catch (error) {
+            console.error('Error playing win sound:', error);
+        }
     }
-  }
+}
+
+async playLoseSound() {
+    if (!this.state.isSoundMuted) {
+        try {
+            console.log('Playing lose sound...');
+            await this.soundObjectLose.playAsync();
+            console.log('Lose sound played successfully!');
+        } catch (error) {
+            console.error('Error playing lose sound:', error);
+        }
+    }
+}
 
   onMove(i) {
     const history = this.state.history.slice(0, this.state.stepNumber + 1);
@@ -194,6 +217,10 @@ class App extends Component {
       usercolorx: null,
     });
     this.initializeGame();
+  }
+
+  whoseTurn() {
+    return this.state.xIsNext ? 'X' : 'O';
   }
 
   render() {
@@ -345,7 +372,7 @@ const winner = (squares) => {
       return squares[a];
     }
   }
-  if (squares.indexOf(null) === -1) return null; 
+  if (squares.indexOf(null) === -1) return null;
   return undefined;
 };
 

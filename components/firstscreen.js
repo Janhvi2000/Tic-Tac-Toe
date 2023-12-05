@@ -33,7 +33,6 @@ const Home = ({ navigation, route }) => {
             if (_array.length > 0) {
               setUserStats(_array[0]);
             } else {
-              // Handle the case when no stats are found for the user
               setUserStats({ games: 0, wins: 0, losses: 0, draws: 0 });
             }
           },
