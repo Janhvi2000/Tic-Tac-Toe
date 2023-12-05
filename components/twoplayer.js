@@ -3,6 +3,7 @@ import { Button, SafeAreaView, Text, TouchableHighlight, View, StyleSheet } from
 import { withNavigation } from '@react-navigation/native';
 import * as SQLite from 'expo-sqlite';
 import { Audio } from 'expo-av'; 
+import styles from '../assets/styles';
 
 const db = SQLite.openDatabase('user.db');
 
@@ -169,8 +170,10 @@ class App extends Component {
   render() {
     const user1 = this.props.route.params.user1;
     const user2 = this.props.route.params.user2;
+    const usercolor = this.props.route.params.usercolor || 'black';
     const history = this.state.history;
     const currentSquares = history[this.state.stepNumber];
+  
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.boardContainer}>
@@ -182,24 +185,31 @@ class App extends Component {
             winner={winner(currentSquares)}
             user1={user1}
             user2={user2}
+            usercolor={usercolor}
           />
-          <Button title="Start new game" onPress={() => this.onNewGame()} />
-          <Button
-            title="Undo"
-            onPress={() => this.onUndo()}
-            disabled={this.state.stepNumber === 0}
-          />
-          <Button title="Resign" onPress={() => this.onResign()} />
-          <Button
-            title="Home"
-            onPress={() =>
-              this.props.navigation.navigate('FirstScreen', {
-                user1: user1,
-                user2: user2,
-                updateStats: this.updateStats, 
-              })
-            }
-          />
+          <View style={styles.buttonTable}>
+            <View style={styles.buttonRow}>
+              <Button
+                title="Undo"
+                onPress={() => this.onUndo()}
+                disabled={this.state.stepNumber === 0}
+              />
+              <Button title="Resign" onPress={() => this.onResign()} />
+            </View>
+            <View style={styles.buttonRow}>
+              <Button title="Start new game" onPress={() => this.onNewGame()} />
+              <Button
+                title="Home"
+                onPress={() =>
+                  this.props.navigation.navigate('FirstScreen', {
+                    user1: user1,
+                    user2: user2,
+                    updateStats: this.updateStats,
+                  })
+                }
+              />
+            </View>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -234,7 +244,7 @@ const Square = ({ label, onPress }) => {
   );
 };
 
-const Status = ({ turn, winner, user1, user2 }) => {
+const Status = ({ turn, winner, user1, user2, usercolor }) => {
   let text = '';
   if (winner === null) {
     text = 'Tie game :-/';
@@ -248,44 +258,10 @@ const Status = ({ turn, winner, user1, user2 }) => {
 
   return (
     <View style={styles.statusContainer}>
-      <Text style={styles.squareText}>{text}</Text>
+      <Text style={[styles.squareText, { color: usercolor }]}>{text}</Text>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white', // Added a white background to match the first snippet
-  },
-  boardContainer: {
-    alignItems: 'center',
-  },
-  boardRow: {
-    flexDirection: 'row',
-  },
-  square: {
-    width: 100,
-    height: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#000',
-    backgroundColor: 'white', // Added a white background to match the first snippet
-  },
-  squareText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  buttonContainer: {
-    alignItems: 'center',
-  },
-  statusContainer: {
-    marginBottom: 20, 
-  },
-});
 
 const winner = (squares) => {
   const lines = [
@@ -308,5 +284,6 @@ const winner = (squares) => {
   if (squares.indexOf(null) === -1) return null; // tie game
   return undefined;
 };
+
 
 export default App;

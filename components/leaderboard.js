@@ -25,23 +25,48 @@ const Home = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Text style={{fontWeight: 'bold', fontSize: 30, marginBottom:10}}>Leaderboard</Text>
       <View style={styles.table}>
-        <View style={styles.row}>
-          <Text style={styles.header}>User</Text>
-          <Text style={styles.header}>Games</Text>
-          <Text style={styles.header}>Wins</Text>
-          <Text style={styles.header}>Losses</Text>
-          <Text style={styles.header}>Draws</Text>
+        <View style={styles.column}>
+          <Text style={styles.header}> User </Text>
+          {userStats.map((user, index) => (
+            <Text key={index} style={styles.cell}>
+              {user.username}
+            </Text>
+          ))}
         </View>
-        {userStats.map((user, index) => (
-          <View style={styles.row} key={index}>
-            <Text>{user.username}</Text>
-            <Text>{user.games}</Text>
-            <Text>{user.wins}</Text>
-            <Text>{user.losses}</Text>
-            <Text>{user.draws}</Text>
-          </View>
-        ))}
+        <View style={styles.column}>
+          <Text style={styles.header}> Games </Text>
+          {userStats.map((user, index) => (
+            <Text key={index} style={styles.cell}>
+              {user.games}
+            </Text>
+          ))}
+        </View>
+        <View style={styles.column}>
+          <Text style={styles.header}> Wins </Text>
+          {userStats.map((user, index) => (
+            <Text key={index} style={styles.cell}>
+              {user.wins}
+            </Text>
+          ))}
+        </View>
+        <View style={styles.column}>
+          <Text style={styles.header}> Losses </Text>
+          {userStats.map((user, index) => (
+            <Text key={index} style={styles.cell}>
+              {user.losses}
+            </Text>
+          ))}
+        </View>
+        <View style={styles.column}>
+          <Text style={styles.header}> Draws </Text>
+          {userStats.map((user, index) => (
+            <Text key={index} style={styles.cell}>
+              {user.draws}
+            </Text>
+          ))}
+        </View>
       </View>
     </ScrollView>
   );
@@ -54,17 +79,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   table: {
+    flexDirection: 'row',
     borderWidth: 1,
     borderColor: 'black',
     marginBottom: 20,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
     padding: 10,
+    width: '80%',
+  },
+  column: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    marginLeft: 10,
+    flex: 1,
   },
   header: {
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  cell: {
+    textAlign: 'center',
+    fontSize: 18,
   },
 });
 
