@@ -3,20 +3,20 @@ import { View, Text, StyleSheet, ScrollView, Button } from 'react-native';
 import * as SQLite from 'expo-sqlite';
 import customStyles from '../assets/customStyles';
 
-const db = SQLite.openDatabase('user.db');
+const db = SQLite.openDatabase('user.db', () => {
+  console.log('Database opened successfully');
+});
 
 const Home = ({ navigation, route }) => {
-  const [user1Stats, setUser1Stats] = useState(null);
-  const [user2Stats, setUser2Stats] = useState(null);
   const { user1, user2 } = route.params;
+  const [user1Stats, setUser1Stats] = useState({ games: 0, wins: 0, losses: 0, draws: 0 });
+  const [user2Stats, setUser2Stats] = useState({ games: 0, wins: 0, losses: 0, draws: 0 });
 
   useEffect(() => {
     console.log('Page opened or route params changed');
-    if (user1 && user2) {
-      updateStats();
-    }
+    updateStats();
     route.params?.updateStats?.();
-  }, [route.params, user1, user2]);
+  }, [user1, user2, route.params]);
 
   const updateStats = () => {
     getUserStats(user1, setUser1Stats);
@@ -24,30 +24,41 @@ const Home = ({ navigation, route }) => {
   };
 
   const getUserStats = (username, setUserStats) => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        'SELECT * FROM users WHERE username = ?',
-        [username],
-        (_, { rows: { _array } }) => {
-          if (_array.length > 0) {
-            setUserStats(_array[0]);
+    db.transaction(
+      (tx) => {
+        tx.executeSql(
+          'SELECT * FROM users WHERE username = ?',
+          [username],
+          (_, { rows: { _array } }) => {
+            if (_array.length > 0) {
+              setUserStats(_array[0]);
+            } else {
+              // Handle the case when no stats are found for the user
+              setUserStats({ games: 0, wins: 0, losses: 0, draws: 0 });
+            }
+          },
+          (_, error) => {
+            console.log(`Error selecting stats for ${username}:`, error);
           }
-        }
-      );
-    });
+        );
+      },
+      (error) => {
+        console.log('Transaction error:', error);
+      }
+    );
   };
 
   const navigateToComputerPage = () => {
     navigation.navigate('Computer', {
-      user1: user1,
-      user2: user2,
+      user1,
+      user2,
     });
   };
 
   const navigateToSettingsPage = () => {
     navigation.navigate('Settings', {
-      user1: user1,
-      user2: user2,
+      user1,
+      user2,
     });
   };
 

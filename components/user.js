@@ -7,6 +7,7 @@ const db = SQLite.openDatabase('user.db');
 const App = ({ navigation }) => {
   const [username1, setUsername1] = useState('');
   const [username2, setUsername2] = useState('');
+
   const [games1, setGames1] = useState(0);
   const [wins1, setWins1] = useState(0);
   const [losses1, setLosses1] = useState(0);
@@ -20,11 +21,10 @@ const App = ({ navigation }) => {
   useEffect(() => {
     db.transaction((tx) => {
       tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, games INTEGER, wins INTEGER, losses INTEGER, draws INTEGER, usercolor TEXT)',
+        'CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, games INTEGER, wins INTEGER, losses INTEGER, draws INTEGER, usercolor TEXT, sound BOOLEAN)',
         [],
         (_, result) => {
           console.log('Table created successfully');
-          // Now, call manageUser after table creation
           manageUser(username1, setGames1, setWins1, setLosses1, setDraws1);
           manageUser(username2, setGames2, setWins2, setLosses2, setDraws2);
         },
@@ -41,7 +41,7 @@ const App = ({ navigation }) => {
         (_, { rows: { _array } }) => {
           if (_array.length === 0) {
             tx.executeSql(
-              'INSERT INTO users (username, games, wins, losses, draws, usercolor) VALUES (?, 0, 0, 0, 0, "black")',
+              'INSERT INTO users (username, games, wins, losses, draws, usercolor, sound) VALUES (?, 0, 0, 0, 0, "black", 1)',
               [username],
               () => {
                 console.log('New user created:', { username });
@@ -49,20 +49,41 @@ const App = ({ navigation }) => {
                 setWins(0);
                 setLosses(0);
                 setDraws(0);
+  
+                // After inserting, let's select the user again
+                tx.executeSql(
+                  'SELECT * FROM users WHERE username = ?',
+                  [username],
+                  (_, { rows: { _array: insertedUser } }) => {
+                    if (insertedUser.length > 0) {
+                      console.log('User selected after insertion:', insertedUser[0]);
+                    }
+                  },
+                  (_, error) => {
+                    console.log('Error selecting user after insertion:', error);
+                  }
+                );
+              },
+              (_, error) => {
+                console.log('Error inserting user:', error);
               }
             );
           } else {
-            const { games, wins, losses, draws } = _array[0];
-            console.log('Existing user logged in:', { username, games, wins, losses, draws });
+            const { games, wins, losses, draws, usercolor, sound } = _array[0];
+            console.log('Existing user logged in:', { username, games, wins, losses, draws, usercolor, sound });
             setGames(games);
             setWins(wins);
             setLosses(losses);
             setDraws(draws);
           }
+        },
+        (_, error) => {
+          console.log('Error selecting user:', error);
         }
       );
     });
   };
+  
 
   const navigateToFirstScreen = () => {
     navigation.navigate('FirstScreen', {

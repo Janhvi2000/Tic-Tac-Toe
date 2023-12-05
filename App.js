@@ -7,6 +7,7 @@ import User from './components/user';
 import Leaderboard from './components/leaderboard';
 import Settings from './components/settings';
 
+
 const Stack = createNativeStackNavigator();
 
 function App() {
@@ -44,6 +45,7 @@ function App() {
           component={Settings}
           options={{ title: 'TicTacToe' }}
         />
+       
       </Stack.Navigator>
     </NavigationContainer>
   );
