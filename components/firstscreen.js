@@ -44,6 +44,13 @@ const Home = ({ navigation, route }) => {
     });
   };
 
+  const navigateToSettingsPage = () => {
+    navigation.navigate('Settings', {
+      user1: user1,
+      user2: user2,
+    });
+  };
+
   const navigateToLeaderboardPage = () => {
     navigation.navigate('Leaderboard');
   };
@@ -84,6 +91,7 @@ const Home = ({ navigation, route }) => {
       </View>
       <View style={customStyles.buttonContainer}>
         <Button title="Game" onPress={navigateToComputerPage} />
+        <Button title="Settings" onPress={navigateToSettingsPage} />
         <Button title="Leaderboard" onPress={navigateToLeaderboardPage} />
       </View>
     </ScrollView>

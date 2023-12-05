@@ -5,6 +5,7 @@ import FirstScreen from './components/firstscreen';
 import Computer from './components/twoplayer';
 import User from './components/user';
 import Leaderboard from './components/leaderboard';
+import Settings from './components/settings';
 
 const Stack = createNativeStackNavigator();
 
@@ -36,6 +37,11 @@ function App() {
         <Stack.Screen
           name="Leaderboard"
           component={Leaderboard}
+          options={{ title: 'TicTacToe' }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={Settings}
           options={{ title: 'TicTacToe' }}
         />
       </Stack.Navigator>

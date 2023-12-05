@@ -1,15 +1,15 @@
 import React, { Component } from 'react';
-import { Button, SafeAreaView, Text, TouchableHighlight, View, StyleSheet } from 'react-native';
+import { Button, SafeAreaView, Text, TouchableHighlight, View } from 'react-native';
 import { withNavigation } from '@react-navigation/native';
 import * as SQLite from 'expo-sqlite';
-import { Audio } from 'expo-av'; 
+import { Audio } from 'expo-av';
 import styles from '../assets/styles';
 
 const db = SQLite.openDatabase('user.db');
 
 const newGameState = {
-  history: [Array(9).fill(null)], 
-  stepNumber: 0, 
+  history: [Array(9).fill(null)],
+  stepNumber: 0,
   xIsNext: true,
 };
 
@@ -17,46 +17,65 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = newGameState;
+    this.initializeGame();
   }
 
   whoseTurn() {
     return this.state.xIsNext ? 'X' : 'O';
   }
 
-  onNewGame() {
-    this.setState(newGameState);
-  }
-
   soundObjectWin = new Audio.Sound();
   soundObjectLose = new Audio.Sound();
 
+  initializeGame = async () => {
+    const { user1, user2 } = this.props.route.params;
+    await this.fetchUserColor(user1, 'usercolorx');
+    await this.fetchUserColor(user2, 'usercoloro');
+  };
+
   async componentDidMount() {
+    this.initializeGame();
     await this.soundObjectWin.loadAsync(require('../assets/win.mp3'));
     await this.soundObjectLose.loadAsync(require('../assets/loss.mp3'));
+  }
+
+  async fetchUserColor(username, stateKey) {
+    await new Promise((resolve) => {
+      db.transaction((tx) => {
+        tx.executeSql(
+          'SELECT usercolor FROM users WHERE username = ?',
+          [username],
+          (_, { rows: { _array } }) => {
+            if (_array.length > 0) {
+              this.setState({ [stateKey]: _array[0].usercolor });
+            }
+            resolve();
+          }
+        );
+      });
+    });
   }
 
   async playWinSound() {
     try {
       console.log('Playing win sound...');
       await this.soundObjectWin.playAsync();
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Add a delay of 1 second
       console.log('Win sound played successfully!');
     } catch (error) {
       console.error('Error playing win sound:', error);
     }
   }
-  
+
   async playLoseSound() {
     try {
       console.log('Playing lose sound...');
       await this.soundObjectLose.playAsync();
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Add a delay of 1 second
       console.log('Lose sound played successfully!');
     } catch (error) {
       console.error('Error playing lose sound:', error);
     }
   }
-  
+
   onMove(i) {
     const history = this.state.history.slice(0, this.state.stepNumber + 1);
     const currentSquares = history[history.length - 1];
@@ -84,7 +103,7 @@ class App extends Component {
   }
 
   updateWinner(winner, user1, user2) {
-    console.log("winner:", winner)
+    console.log('winner:', winner);
     db.transaction((tx) => {
       if (winner === null) {
         tx.executeSql(
@@ -101,13 +120,12 @@ class App extends Component {
             console.error('Error updating draw in the database:', error);
           }
         );
-        
-        this.playLoseSound(); 
-        
+
+        this.playLoseSound();
       } else {
         const winnerUsername = winner === 'X' ? user1 : user2;
         const loserUsername = winner === 'X' ? user2 : user1;
-  
+
         tx.executeSql(
           'UPDATE users SET games = games + 1, wins = wins + 1 WHERE username = ?',
           [winnerUsername],
@@ -122,7 +140,7 @@ class App extends Component {
             console.error('Error updating winner in the database:', winnerError);
           }
         );
-  
+
         tx.executeSql(
           'UPDATE users SET games = games + 1, losses = losses + 1 WHERE username = ?',
           [loserUsername],
@@ -137,12 +155,11 @@ class App extends Component {
             console.error('Error updating loser in the database:', loserError);
           }
         );
-  
-        this.playWinSound(); 
+
+        this.playWinSound();
       }
     });
   }
-  
 
   onUndo() {
     if (this.state.stepNumber > 0) {
@@ -156,9 +173,9 @@ class App extends Component {
   onResign() {
     const { user1, user2 } = this.props.route.params;
     const loserUsername = this.whoseTurn();
-    console.log("loser: ",loserUsername);
+    console.log('loser: ', loserUsername);
     const winnerUsername = loserUsername === 'X' ? 'O' : 'X';
-    console.log("winner:",winnerUsername)
+    console.log('winner:', winnerUsername);
     this.updateWinner(winnerUsername, user1, user2);
     this.props.navigation.navigate('FirstScreen', {
       user1: user1,
@@ -167,17 +184,33 @@ class App extends Component {
     });
   }
 
+  onNewGame() {
+    const { user1, user2 } = this.props.route.params;
+    this.setState({
+      ...newGameState,
+      user1: user1,
+      user2: user2,
+      usercoloro: null,
+      usercolorx: null,
+    });
+    this.initializeGame();
+  }
+
   render() {
     const user1 = this.props.route.params.user1;
     const user2 = this.props.route.params.user2;
-    const usercolor = this.props.route.params.usercolor || 'black';
     const history = this.state.history;
     const currentSquares = history[this.state.stepNumber];
-  
+
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.boardContainer}>
-          <Board squares={currentSquares} onMove={(i) => this.onMove(i)} />
+          <Board
+            squares={currentSquares}
+            onMove={(i) => this.onMove(i)}
+            usercolorx={this.state.usercolorx}
+            usercoloro={this.state.usercoloro}
+          />
         </View>
         <View style={styles.buttonContainer}>
           <Status
@@ -185,7 +218,8 @@ class App extends Component {
             winner={winner(currentSquares)}
             user1={user1}
             user2={user2}
-            usercolor={usercolor}
+            usercolorx={this.state.usercolorx}
+            usercoloro={this.state.usercoloro}
           />
           <View style={styles.buttonTable}>
             <View style={styles.buttonRow}>
@@ -216,30 +250,60 @@ class App extends Component {
   }
 }
 
-const Board = ({ squares, onMove }) => {
+const Board = ({ squares, onMove, usercolorx, usercoloro }) => {
   return (
     <View style={styles.board}>
-      <Row squares={squares} startIndex={0} onMove={onMove} />
-      <Row squares={squares} startIndex={3} onMove={onMove} />
-      <Row squares={squares} startIndex={6} onMove={onMove} />
+      <Row
+        squares={squares}
+        startIndex={0}
+        onMove={onMove}
+        usercolorx={usercolorx}
+        usercoloro={usercoloro}
+      />
+      <Row
+        squares={squares}
+        startIndex={3}
+        onMove={onMove}
+        usercolorx={usercolorx}
+        usercoloro={usercoloro}
+      />
+      <Row
+        squares={squares}
+        startIndex={6}
+        onMove={onMove}
+        usercolorx={usercolorx}
+        usercoloro={usercoloro}
+      />
     </View>
   );
 };
 
-const Row = ({ squares, startIndex, onMove }) => {
+const Row = ({ squares, startIndex, onMove, usercolorx, usercoloro }) => {
   return (
     <View style={styles.boardRow}>
-      <Square label={squares[startIndex]} onPress={() => onMove(startIndex)} />
-      <Square label={squares[startIndex + 1]} onPress={() => onMove(startIndex + 1)} />
-      <Square label={squares[startIndex + 2]} onPress={() => onMove(startIndex + 2)} />
+      <Square
+        label={squares[startIndex]}
+        onPress={() => onMove(startIndex)}
+        usercolor={squares[startIndex] === 'X' ? usercolorx : usercoloro}
+      />
+      <Square
+        label={squares[startIndex + 1]}
+        onPress={() => onMove(startIndex + 1)}
+        usercolor={squares[startIndex + 1] === 'X' ? usercolorx : usercoloro}
+      />
+      <Square
+        label={squares[startIndex + 2]}
+        onPress={() => onMove(startIndex + 2)}
+        usercolor={squares[startIndex + 2] === 'X' ? usercolorx : usercoloro}
+      />
     </View>
   );
 };
 
-const Square = ({ label, onPress }) => {
+const Square = ({ label, onPress, usercolor }) => {
   return (
     <TouchableHighlight style={styles.square} onPress={onPress}>
-      <Text style={styles.squareText}>{label}</Text>
+      <Text style={[styles.squareText, { color: usercolor }]}>{label}</Text>
     </TouchableHighlight>
   );
 };
@@ -281,9 +345,8 @@ const winner = (squares) => {
       return squares[a];
     }
   }
-  if (squares.indexOf(null) === -1) return null; // tie game
+  if (squares.indexOf(null) === -1) return null; 
   return undefined;
 };
-
 
 export default App;
